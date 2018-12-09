@@ -12,7 +12,11 @@ namespace Iot.Devices.Samples
         {
             Console.WriteLine("Hello Bmp280!");
 
-            var i2cSettings = new I2cConnectionSettings(1, 0x77);
+            const int bmp280Address = 0x77;
+            const int busId = 1;
+            const double defaultSeaLevelPressure = 1013.25;
+
+            var i2cSettings = new I2cConnectionSettings(busId, bmp280Address);
             var unixDevice = new UnixI2cDevice(i2cSettings);
             var i2CBmp280 = new Bmp280(unixDevice);
 
@@ -22,9 +26,9 @@ namespace Iot.Devices.Samples
                 {
                     double tempValue = i2CBmp280.ReadTemperature();
                     Console.WriteLine($"Temperature {tempValue}");
-                    double preValue = i2CBmp280.ReadPreasure();
+                    double preValue = i2CBmp280.ReadPressure();
                     Console.WriteLine($"Preasure {preValue}");
-                    double altValue = i2CBmp280.ReadAltitude(1013.25);
+                    double altValue = i2CBmp280.ReadAltitude(defaultSeaLevelPressure);
                     Console.WriteLine($"Altitude: {altValue}");
                     Thread.Sleep(1000);
                 }

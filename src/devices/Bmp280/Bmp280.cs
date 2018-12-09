@@ -23,6 +23,7 @@ namespace Iot.Device
         {
             _i2cDevice = i2cDevice;
             CalibrationData = new Bmp280CalibrationData();
+            protocol = CommunicationProtocol.I2c;
         }
 
         public void Begin()
@@ -70,7 +71,7 @@ namespace Iot.Device
 
         private void WriteControlReguster()
         {
-            byte[] writebuffer = new byte[] { (byte)Registers.REGISTER_CONTROL,0x3F };
+            byte[] writebuffer = new byte[] { (byte)Registers.REGISTER_CONTROL, 0x3F };
             _i2cDevice.Write(writebuffer);
         }
 
@@ -82,7 +83,6 @@ namespace Iot.Device
         public double ReadTemperature()
         {
             //Make sure the I2C device is initialized
-          //  ReadCoefficients();
             if (!initialised) Begin();
 
             //Read the MSB, LSB and bits 7:4 (XLSB) of the temperature from the BMP280 registers
@@ -99,17 +99,17 @@ namespace Iot.Device
             //Return the temperature as a float value
             return temp;
         }
-        
-        public double ReadPreasure()
+
+        public double ReadPressure()
         {
             //Make sure the I2C device is initialized
             if (!initialised) Begin();
 
             //Read the temperature first to load the t_fine value for compensation
-        //    if (TFine == int.MinValue)
-      //      {
+            if (TFine == int.MinValue)
+            {
                 ReadTemperature();
-           // }
+            }
 
             //Read the MSB, LSB and bits 7:4 (XLSB) of the pressure from the BMP280 registers
             byte tmsb = Read8((byte)Registers.REGISTER_PRESSUREDATA_MSB);
@@ -129,24 +129,24 @@ namespace Iot.Device
         /// <summary>
         ///  Calculates the altitude (in meters) from the specified atmospheric pressure(in hPa), and sea-level pressure(in hPa).
         /// </summary>
-        /// <param name="seaLevel" > 
+        /// <param name="seaLevelPressure" > 
         ///   Sea-level pressure in hPa
         /// </param>
         /// <returns>
         ///   Atmospheric pressure in hPa
         /// </returns>
-        public double ReadAltitude(double seaLevel)
+        public double ReadAltitude(double seaLevelPressure)
         {
             //Make sure the I2C device is initialized
             if (!initialised) Begin();
 
             //Read the pressure first
-            double pressure = ReadPreasure();
+            double pressure = ReadPressure();
             //Convert the pressure to Hectopascals(hPa)
             pressure /= 100;
 
             //Calculate and return the altitude using the international barometric formula
-            return 44330.0 * (1.0 - Math.Pow((pressure / seaLevel), 0.1903));
+            return 44330.0 * (1.0 - Math.Pow((pressure / seaLevelPressure), 0.1903));
         }
 
         //Method to return the temperature in DegC. Resolution is 0.01 DegC. Output value of “5123” equals 51.23 DegC.
@@ -191,22 +191,24 @@ namespace Iot.Device
         }
 
         /// <summary>
-        /// Method to read an 8-bit value from a register
+        /// Reads an 8 bit value from a register
         /// </summary>
         /// <param name="register"></param>
         /// <returns></returns>
-        protected virtual byte Read8(byte register)
+        public byte Read8(byte register)
         {
-            byte value = 0;
-            byte[] writeBuffer = new byte[] { 0x00 };
+            if (protocol == CommunicationProtocol.I2c)
+            {
+                byte value = 0;
 
-            writeBuffer[0] = register;
-
-            _i2cDevice.WriteByte(register);
-            value = _i2cDevice.ReadByte();
-            // _i2cDevice.WriteRead(writeBuffer, readBuffer);
-            // value = readBuffer[0];
-            return value;
+                _i2cDevice.WriteByte(register);
+                value = _i2cDevice.ReadByte();
+                return value;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         /// <summary>
@@ -214,34 +216,26 @@ namespace Iot.Device
         /// </summary>
         /// <param name="register"></param>
         /// <returns></returns>
-        protected ushort Read16(byte register)
+        public ushort Read16(byte register)
         {
-            ushort value;
+            if (protocol == CommunicationProtocol.I2c)
+            {
+                ushort value;
 
-            byte[] readBuffer = new byte[] { 0x00, 0x00 };
+                byte[] readBuffer = new byte[] { 0x00, 0x00 };
 
+                _i2cDevice.WriteByte(register);
+                _i2cDevice.Read(readBuffer);
+                int h = readBuffer[1] << 8;
+                int l = readBuffer[0];
+                value = (ushort)(h + l);
 
-            _i2cDevice.WriteByte(register);
-            _i2cDevice.Read(readBuffer);
-            int h = readBuffer[1] << 8;
-            int l = readBuffer[0];
-            value = (ushort)(h + l);
-
-            return value;
-
-            //ushort value;
-
-            //byte[] writeBuffer = new byte[] { 0x00 };
-            //byte[] readBuffer = new byte[] { 0x00, 0x00 };
-
-            //writeBuffer[0] = register;
-
-            //_i2cDevice.WriteRead(writeBuffer, readBuffer);
-            //int h = readBuffer[1] << 8;
-            //int l = readBuffer[0];
-            //value = (ushort)(h + l);
-
-            //return value;
+                return value;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         /// <summary>
@@ -249,24 +243,28 @@ namespace Iot.Device
         /// </summary>
         /// <param name="register"></param>
         /// <returns></returns>
-        protected uint Read24(byte register)
+        public uint Read24(byte register)
         {
-            uint value;
+            if (protocol == CommunicationProtocol.I2c)
+            {
+                uint value;
 
-            byte[] writeBuffer = new byte[] { 0x00 };
-            byte[] readBuffer = new byte[] { 0x00, 0x00 };
+                byte[] readBuffer = new byte[] { 0x00, 0x00, 0x00 };
 
-            writeBuffer[0] = register;
+                _i2cDevice.WriteByte(register);
+                _i2cDevice.Read(readBuffer);
+                value = readBuffer[2];
+                value <<= 8;
+                value = readBuffer[1];
+                value <<= 8;
+                value = readBuffer[0];
 
-            _i2cDevice.WriteByte(register);
-            _i2cDevice.Read(readBuffer);
-            value = readBuffer[2];
-            value <<= 8;
-            value = readBuffer[1];
-            value <<= 8;
-            value = readBuffer[0];
-
-            return value;
+                return value;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public void Dispose()
@@ -319,6 +317,4 @@ namespace Iot.Device
             REGISTER_HUMIDDATA_LSB = 0xFE,
         };
     }
-
-
 }
