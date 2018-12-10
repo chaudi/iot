@@ -26,14 +26,12 @@ namespace Iot.Device
             protocol = CommunicationProtocol.I2c;
         }
 
-        public void Begin()
+        private void Begin()
         {
-            byte[] writeBuffer = new byte[] { (byte)Registers.REGISTER_CHIPID };
             byte[] readBuffer = new byte[] { 0xFF };
 
-            _i2cDevice.Write(writeBuffer);
+            _i2cDevice.WriteByte((byte)Registers.REGISTER_CHIPID);
             _i2cDevice.Read(readBuffer);
-            //  _i2cDevice.WriteRead(writeBuffer, readBuffer);
 
             if (readBuffer[0] != Signature)
             {
@@ -43,11 +41,12 @@ namespace Iot.Device
 
             //Read the coefficients table
             ReadCoefficients();
+
             WriteControlReguster();
         }
 
         /// <summary>
-        /// Reads the factory-set coefficients 
+        ///  Reads the factory-set coefficients 
         /// </summary>
         private void ReadCoefficients()
         {
@@ -76,9 +75,10 @@ namespace Iot.Device
         }
 
         /// <summary>
-        /// 
+        ///  Reads the temperature from the sensor
         /// </summary>
-        /// <returns> Temperature in degrees celsius
+        /// <returns>
+        ///  Temperature in degrees celsius
         /// </returns>
         public double ReadTemperature()
         {
@@ -100,6 +100,12 @@ namespace Iot.Device
             return temp;
         }
 
+        /// <summary>
+        ///  Reads the pressure from the sensor
+        /// </summary>
+        /// <returns>
+        ///  Atmospheric pressure in hPa
+        /// </returns>
         public double ReadPressure()
         {
             //Make sure the I2C device is initialized
@@ -127,13 +133,13 @@ namespace Iot.Device
         }
 
         /// <summary>
-        ///  Calculates the altitude (in meters) from the specified atmospheric pressure(in hPa), and sea-level pressure(in hPa).
+        ///  Calculates the altitude in meters from the specified sea-level pressure(in hPa).
         /// </summary>
         /// <param name="seaLevelPressure" > 
-        ///   Sea-level pressure in hPa
+        ///  Sea-level pressure in hPa
         /// </param>
         /// <returns>
-        ///   Atmospheric pressure in hPa
+        ///  Height in meters from the sensor
         /// </returns>
         public double ReadAltitude(double seaLevelPressure)
         {
@@ -149,7 +155,13 @@ namespace Iot.Device
             return 44330.0 * (1.0 - Math.Pow((pressure / seaLevelPressure), 0.1903));
         }
 
-        //Method to return the temperature in DegC. Resolution is 0.01 DegC. Output value of “5123” equals 51.23 DegC.
+        /// <summary>
+        ///  Returns the temperature in DegC. Resolution is 0.01 DegC. Output value of “5123” equals 51.23 DegC.
+        /// </summary>
+        /// <param name="adc_T"></param>
+        /// <returns>
+        ///  Degrees celsius
+        /// </returns>
         private double BMP280_compensate_T_double(int adc_T)
         {
             double var1, var2, T;
@@ -164,8 +176,14 @@ namespace Iot.Device
             return T;
         }
 
-        //Method to returns the pressure in Pa, in Q24.8 format (24 integer bits and 8 fractional bits).
-        //Output value of “24674867” represents 24674867/256 = 96386.2 Pa = 963.862 hPa
+        /// <summary>
+        ///  Returns the pressure in Pa, in Q24.8 format (24 integer bits and 8 fractional bits).
+        ///  Output value of “24674867” represents 24674867/256 = 96386.2 Pa = 963.862 hPa
+        /// </summary>
+        /// <param name="adc_P"></param>
+        /// <returns>
+        ///  Pressure in hPa
+        /// </returns>
         private long BMP280_compensate_P_Int64(int adc_P)
         {
             long var1, var2, p;
@@ -191,10 +209,14 @@ namespace Iot.Device
         }
 
         /// <summary>
-        /// Reads an 8 bit value from a register
+        ///  Reads an 8 bit value from a register
         /// </summary>
-        /// <param name="register"></param>
-        /// <returns></returns>
+        /// <param name="register">
+        ///  Register to read from
+        /// </param>
+        /// <returns>
+        ///  Value from register
+        /// </returns>
         public byte Read8(byte register)
         {
             if (protocol == CommunicationProtocol.I2c)
@@ -212,10 +234,14 @@ namespace Iot.Device
         }
 
         /// <summary>
-        /// Reads a 16 bit value over I2C 
+        ///  Reads a 16 bit value over I2C 
         /// </summary>
-        /// <param name="register"></param>
-        /// <returns></returns>
+        /// <param name="register">
+        ///  Register to read from
+        /// </param>
+        /// <returns>
+        ///  Value from register
+        /// </returns>
         public ushort Read16(byte register)
         {
             if (protocol == CommunicationProtocol.I2c)
@@ -239,10 +265,14 @@ namespace Iot.Device
         }
 
         /// <summary>
-        ///  @brief  Reads a 24 bit value over I2C 
+        ///  Reads a 24 bit value over I2C 
         /// </summary>
-        /// <param name="register"></param>
-        /// <returns></returns>
+        /// <param name="register">
+        ///  Register to read from
+        /// </param>
+        /// <returns>
+        ///  Value from register
+        /// </returns>
         public uint Read24(byte register)
         {
             if (protocol == CommunicationProtocol.I2c)
@@ -277,7 +307,7 @@ namespace Iot.Device
         }
 
         /// <summary>
-        /// Registers
+        ///  Registers
         /// </summary>
         private enum Registers : byte
         {
@@ -300,8 +330,7 @@ namespace Iot.Device
             REGISTER_SOFTRESET = 0xE0,
 
             REGISTER_CAL26 = 0xE1,  // R calibration stored in 0xE1-0xF0
-
-            REGISTER_CONTROLHUMID = 0xF2,
+            
             REGISTER_CONTROL = 0xF4,
             REGISTER_CONFIG = 0xF5,
 
@@ -311,10 +340,7 @@ namespace Iot.Device
 
             REGISTER_TEMPDATA_MSB = 0xFA,
             REGISTER_TEMPDATA_LSB = 0xFB,
-            REGISTER_TEMPDATA_XLSB = 0xFC, // bits <7:4>
-
-            REGISTER_HUMIDDATA_MSB = 0xFD,
-            REGISTER_HUMIDDATA_LSB = 0xFE,
+            REGISTER_TEMPDATA_XLSB = 0xFC, // bits <7:4>=
         };
     }
 }
