@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="rpi-bmp280_i2c.fzz" />
+    <None Remove="rpi-bmp280_i2c.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Bmp280.csproj" />
   </ItemGroup>
 
