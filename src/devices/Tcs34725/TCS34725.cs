@@ -16,6 +16,8 @@ namespace Iot.Device.Tcs34725
     public class Tcs34725 : IDisposable
     {
         private const byte Signature = 0x58;
+        private const byte Id34725 = 0x44;
+        private const byte Id34727 = 0x4D;
 
         private I2cDevice _i2cDevice;
         private readonly CommunicationProtocol _communicationProtocol;
@@ -27,6 +29,11 @@ namespace Iot.Device.Tcs34725
         private enum CommunicationProtocol
         {
             I2c
+        }
+
+        public Tcs34725(I2cDevice i2cDevice)
+        {
+            _i2cDevice = i2cDevice ?? throw new ArgumentNullException(nameof(i2cDevice));
         }
 
         public Tcs34725(IntegrationTime time = IntegrationTime.T2_4MS, Gain gain = Gain.GAIN_1X, byte address = 0x29, byte commandbit = 0x80)
@@ -49,7 +56,7 @@ namespace Iot.Device.Tcs34725
 
             //    DeviceInformationCollection dic = await DeviceInformation.FindAllAsync(aqs);
 
-            //    I2CDevice = await I2cDevice.FromIdAsync(dic[0].Id, settings);
+            //    I2CDevice = await I2cDevice.FromIdAsync(dic[0].Id34725, settings);
 
             //    if (I2CDevice == null)
             //    {
@@ -79,7 +86,7 @@ namespace Iot.Device.Tcs34725
             }
             _initialized = true;
 
-            // Note: by default, the device is in power down mode on bootup 
+            // Note: by default, the i2cDevice is in power down mode on bootup 
             Enable();
         }
 
@@ -111,43 +118,37 @@ namespace Iot.Device.Tcs34725
         {
             if (!_initialized) Begin();
 
-            ushort c = Read16BitsFromRegister((byte)Register.CDATAL);
-            ushort r = Read16BitsFromRegister((byte)Register.RDATAL);
-            ushort g = Read16BitsFromRegister((byte)Register.GDATAL);
-            ushort b = Read16BitsFromRegister((byte)Register.BDATAL);
+            ushort clear = Read16BitsFromRegister((byte)Register.CDATAL);
+            ushort red = Read16BitsFromRegister((byte)Register.RDATAL);
+            ushort green = Read16BitsFromRegister((byte)Register.GDATAL);
+            ushort blue = Read16BitsFromRegister((byte)Register.BDATAL);
 
             // Set a delay for the integration time 
             switch (_integrationTime)
             {
                 case IntegrationTime.T2_4MS:
-                    //delay(3);
                     await Task.Delay(3);
                     break;
                 case IntegrationTime.T24MS:
-                    //delay(24);
                     await Task.Delay(24);
                     break;
                 case IntegrationTime.T50MS:
-                    //delay(50);
                     await Task.Delay(50);
                     break;
                 case IntegrationTime.T101MS:
-                    //delay(101);
                     await Task.Delay(101);
                     break;
                 case IntegrationTime.T154MS:
-                    //delay(154);
                     await Task.Delay(154);
                     break;
                 case IntegrationTime.T700MS:
-                    //delay(700);
                     await Task.Delay(700);
                     break;
             }
-            return new Tcs34725Color(r, g, b, c);
+            return new Tcs34725Color(red, green, blue, clear);
         }
 
-        async Task<Tcs34725Color> GetRawDataOneShot(ushort r, ushort g, ushort b, ushort c)
+        async Task<Tcs34725Color> GetRawDataOneShot()
         {
             if (!_initialized) Begin();
 
@@ -158,7 +159,7 @@ namespace Iot.Device.Tcs34725
         }
 
         /// <summary>
-        /// Enables the device 
+        /// Enables the i2cDevice 
         /// </summary>
         private async void Enable()
         {
@@ -168,11 +169,11 @@ namespace Iot.Device.Tcs34725
         }
 
         /// <summary>
-        ///  Disables the device (putting it in lower power sleep mode) 
+        ///  Disables the i2cDevice (putting it in lower power sleep mode) 
         /// </summary>
         private void Disable()
         {
-            // Turn the device off to save power 
+            // Turn the i2cDevice off to save power 
             byte reg = 0;
             reg = Read8BitsFromRegister((byte)Register.ENABLE);
             int value = ~(((byte)Register.ENABLE_POWER_ON | (byte)Register.ENABLE_AEN));
@@ -182,11 +183,11 @@ namespace Iot.Device.Tcs34725
         /// <summary>
         /// Converts the raw R/G/B values to color temperature in degrees Kelvin
         /// </summary>
-        /// <param name="r"></param>
-        /// <param name="g"></param>
-        /// <param name="b"></param>
+        /// <param name="red"></param>
+        /// <param name="green"></param>
+        /// <param name="blue"></param>
         /// <returns></returns>
-        public ushort CalculateColorTemperature(ushort r, ushort g, ushort b)
+        public ushort CalculateColorTemperature(ushort red, ushort green, ushort blue)
         {
             //RGB to XYZ correlation
             double X, Y, Z;
@@ -200,9 +201,9 @@ namespace Iot.Device.Tcs34725
             // Based on 6500K fluorescent, 3000K fluorescent   
             // and 60W incandescent values for a wide range.  
             // Note: Y = Illuminance or lux                    
-            X = (-0.14282F * r) + (1.54924F * g) + (-0.95641F * b);
-            Y = (-0.32466F * r) + (1.57837F * g) + (-0.73191F * b);
-            Z = (-0.68202F * r) + (0.77073F * g) + (0.56332F * b);
+            X = (-0.14282F * red) + (1.54924F * green) + (-0.95641F * blue);
+            Y = (-0.32466F * red) + (1.57837F * green) + (-0.73191F * blue);
+            Z = (-0.68202F * red) + (0.77073F * green) + (0.56332F * blue);
 
             // 2. Calculate the chromaticity co-ordinates      
             xc = (X) / (X + Y + Z);
@@ -237,7 +238,7 @@ namespace Iot.Device.Tcs34725
              *
              * (a) As light becomes brighter, the clear channel will tend to
              *     saturate first since R+G+B is approximately equal to C.
-             * (b) The TCS34725 accumulates 1024 counts per 2.4ms of integration
+             * (blue) The TCS34725 accumulates 1024 counts per 2.4ms of integration
              *     time, up to a maximum values of 65535. This means analog
              *     saturation can occur up to an integration time of 153.6ms
              *     (64*2.4ms=153.6ms).
@@ -260,7 +261,7 @@ namespace Iot.Device.Tcs34725
              *
              * (a) An integration time of 50ms or multiples of 50ms are required to
              *     reject both 50Hz and 60Hz ripple.
-             * (b) If an integration time faster than 50ms is required, you may need
+             * (blue) If an integration time faster than 50ms is required, you may need
              *     to average a number of samples over a 50ms period to reject ripple
              *     from fluorescent and incandescent light sources.
              *
@@ -370,6 +371,7 @@ namespace Iot.Device.Tcs34725
 
             return (ushort)illuminance;
         }
+
         void SetInterrupt(bool i)
         {
             byte r = Read8BitsFromRegister((byte)Register.ENABLE);
@@ -474,7 +476,7 @@ namespace Iot.Device.Tcs34725
         }
         public void Dispose()
         {
-            throw new NotImplementedException();
+            _i2cDevice = null;
         }
     }
 }
