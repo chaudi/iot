@@ -5,6 +5,12 @@
 
 namespace Iot.Device.Tcs34725
 {
+    /// <summary>
+    /// The RGBC timing register controls the internal integration time 
+    /// of the RGBC clear and IR channel ADCs in 2.4-ms increments.
+    /// Max RGBC Count = (256 − ATIME) × 1024 up to a maximum of 65535.
+    /// Used to set valid values in <see cref="Register.ATIME"/>
+    /// </summary>
     public enum IntegrationTime : byte
     {
         /// <summary>

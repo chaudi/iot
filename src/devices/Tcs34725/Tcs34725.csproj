@@ -13,6 +13,7 @@
     <Compile Include="Register.cs" />
     <Compile Include="Tcs34725.cs" />
     <Compile Include="Tcs34725Color.cs" />
+    <Compile Include="WaitTime.cs" />
   </ItemGroup>
 
   <ItemGroup>

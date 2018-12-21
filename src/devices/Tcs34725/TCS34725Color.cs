@@ -7,12 +7,12 @@ namespace Iot.Device.Tcs34725
 {
     public class Tcs34725Color
     {
-        public byte Red { get; set; }
-        public byte Green { get; set; }
-        public byte Blue { get; set; }
-        public byte Clear { get; set; }
+        public ushort Red { get; set; }
+        public ushort Green { get; set; }
+        public ushort Blue { get; set; }
+        public ushort Clear { get; set; }
 
-        public Tcs34725Color(byte red, byte green, byte blue, byte clear)
+        public Tcs34725Color(ushort red, ushort green, ushort blue, ushort clear)
         {
             Red = red;
             Green = green;

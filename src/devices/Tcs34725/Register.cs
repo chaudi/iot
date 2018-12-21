@@ -24,42 +24,42 @@ namespace Iot.Device.Tcs34725
         ENABLE_AEN = 0x02,
         /// <summary>
         /// Power on - Writing 1 activates the internal oscillator, 0 disables it
+        /// Enable register PON bit in datasheet
         /// </summary>
-        ENABLE_PON = 0x01,
+        ENABLE_POWER_ON = 0x01,
         /// <summary>
         /// Integration time
+        /// ATIME in datasheet
         /// </summary>
         ATIME = 0x01,
         /// <summary>
-        /// Wait time (if TCS34725_ENABLE_WEN is asserted) 
+        /// Wait time (if TCS34725_ENABLE_WEN is asserted).
+        /// WTIME in datasheet
         /// </summary>
-        WTIME = 0x03,
-        /// <summary>
-        /// WLONG0 = 2.4ms   WLONG1 = 0.029s
-        /// </summary>
-        WTIME_2_4MS = 0xFF,
-        /// <summary>
-        ///  WLONG0 = 204ms   WLONG1 = 2.45s
-        /// </summary>
-        WTIME_204MS = 0xAB,
-        /// <summary>
-        /// WLONG0 = 614ms   WLONG1 = 7.4s
-        /// </summary>
-        WTIME_614MS = 0x00,
+        WAIT_TIME = 0x03,
         /// <summary>
         /// Clear channel lower interrupt threshold
         /// </summary>
         AILTL = 0x04,
+        /// <summary>
+        /// RGBC clear channel low threshold upper byte
+        /// </summary>
         AILTH = 0x05,
         /// <summary>
         /// Clear channel upper interrupt threshold
         /// </summary>
         AIHTL = 0x06,
+        /// <summary>
+        /// RGBC clear channel high threshold upper byte
+        /// </summary>
         AIHTH = 0x07,
         /// <summary>
         /// Persistence register - basic SW filtering mechanism for interrupts
         /// </summary>
         PERS = 0x0C,
+        /// <summary>
+        /// The configuration register sets the wait long time.
+    /// </summary>
         CONFIG = 0x0D,
         /// <summary>
         ///  Choose between short and long (12x) wait times via TCS34725_WTIME 
@@ -68,14 +68,14 @@ namespace Iot.Device.Tcs34725
         /// <summary>
         /// Set the gain level for the sensor
         /// </summary>
-        CONTROL = 0x0F,
+        CONTROL_ANALOG_GAIN = 0x0F,
         /// <summary>
-        /// 0x44 = TCS34721/Tcs34725, 0x4D = TCS34723/TCS34727
+        /// 0x44 = Tcs34721/Tcs34725, 0x4D = Tcs34723/Tcs34727
         /// </summary>
         ID = 0x12,
         STATUS = 0x13,
         /// <summary>
-        ///  RGBC Clean channel interrupt 
+        ///  RGBC Clear channel interrupt 
         /// </summary>
         STATUS_AINT = 0x10,
         /// <summary>
