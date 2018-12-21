@@ -26,7 +26,6 @@ namespace Iot.Device.Tcs34725
         {
             I2c
         }
-        
 
         public Tcs34725(IntegrationTime time = IntegrationTime.T2_4MS, Gain gain = Gain.GAIN_1X, byte address = 0x29, byte commandbit = 0x80)
         {
@@ -63,17 +62,14 @@ namespace Iot.Device.Tcs34725
             //}
         }
 
-        /**************************************************************************/
-        /*! 
-            Initializes I2C and configures the sensor (call this function before 
-            doing anything else) 
-        */
-        /**************************************************************************/
+        /// <summary>
+        ///  Initializes I2C and configures the sensor (call this function before doing anything else) 
+        /// </summary>
         public void Begin()
         {
             Debug.WriteLine("Tcs34725 BEGIN");
 
-            /* Make sure we're actually connected */
+            // Make sure we're actually connected 
             byte x = Read8BitsFromRegister((byte)Register.ID);
             if ((x != 0x44) && (x != 0x10))
             {
@@ -81,7 +77,7 @@ namespace Iot.Device.Tcs34725
             }
             _initialized = true;
 
-            /* Note: by default, the device is in power down mode on bootup */
+            // Note: by default, the device is in power down mode on bootup 
             Enable();
         }
 
@@ -101,11 +97,10 @@ namespace Iot.Device.Tcs34725
             _i2cDevice.Write(writeBuffer);
         }
 
-        /**************************************************************************/
-        /*! 
-            @brief  Reads the raw red, green, blue and clear channel values 
-        */
-        /**************************************************************************/
+        /// <summary>
+        /// Reads the raw red, green, blue and clear channel values 
+        /// </summary>
+        /// <returns></returns>
         private async Task<Tcs34725Color> GetRawData()
         {
             if (!_initialized) Begin();
@@ -115,7 +110,7 @@ namespace Iot.Device.Tcs34725
             byte g = Read8BitsFromRegister((byte)Register.GDATAL);
             byte b = Read8BitsFromRegister((byte)Register.BDATAL);
 
-            /* Set a delay for the integration time */
+            // Set a delay for the integration time 
             switch (_integrationTime)
             {
                 case IntegrationTime.T2_4MS:
@@ -146,11 +141,9 @@ namespace Iot.Device.Tcs34725
             return new Tcs34725Color(r, g, b, c);
         }
 
-        /**************************************************************************/
-        /*! 
-            Enables the device 
-        */
-        /**************************************************************************/
+        /// <summary>
+        /// Enables the device 
+        /// </summary>
         private async void Enable()
         {
             Write((byte)Register.ENABLE, (byte)Register.ENABLE_PON);
@@ -158,66 +151,70 @@ namespace Iot.Device.Tcs34725
             Write((byte)Register.ENABLE, (byte)Register.ENABLE_PON | (byte)Register.ENABLE_AEN);
         }
 
-        /**************************************************************************/
-        /*! 
-            Disables the device (putting it in lower power sleep mode) 
-        */
-        /**************************************************************************/
+        /// <summary>
+        ///  Disables the device (putting it in lower power sleep mode) 
+        /// </summary>
         private void Disable()
         {
-            /* Turn the device off to save power */
+            // Turn the device off to save power 
             byte reg = 0;
             reg = Read8BitsFromRegister((byte)Register.ENABLE);
             int value = ~(((byte)Register.ENABLE_PON | (byte)Register.ENABLE_AEN));
             Write((byte)Register.ENABLE, (byte)(reg & value));
         }
 
-        /**************************************************************************/
-        /*! 
-            @brief  Converts the raw R/G/B values to color temperature in degrees 
-                    Kelvin 
-        */
-        /**************************************************************************/
+        /// <summary>
+        /// Converts the raw R/G/B values to color temperature in degrees Kelvin
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="g"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public double CalculateColorTemperature(short r, short g, short b)
         {
-            double X, Y, Z;      /* RGB to XYZ correlation      */
-            double xc, yc;       /* Chromaticity co-ordinates   */
-            double n;            /* McCamy's formula            */
+            //RGB to XYZ correlation
+            double X, Y, Z;    
+            //Chromaticity co-ordinates
+            double xc, yc;     
+            //McCamy's formula  
+            double n;        
             double cct;
 
-            /* 1. Map RGB values to their XYZ counterparts.    */
-            /* Based on 6500K fluorescent, 3000K fluorescent   */
-            /* and 60W incandescent values for a wide range.   */
-            /* Note: Y = Illuminance or lux                    */
+            // 1. Map RGB values to their XYZ counterparts.    
+            // Based on 6500K fluorescent, 3000K fluorescent   
+            // and 60W incandescent values for a wide range.  
+            // Note: Y = Illuminance or lux                    
             X = (-0.14282F * r) + (1.54924F * g) + (-0.95641F * b);
             Y = (-0.32466F * r) + (1.57837F * g) + (-0.73191F * b);
             Z = (-0.68202F * r) + (0.77073F * g) + (0.56332F * b);
 
-            /* 2. Calculate the chromaticity co-ordinates      */
+            // 2. Calculate the chromaticity co-ordinates      
             xc = (X) / (X + Y + Z);
             yc = (Y) / (X + Y + Z);
 
-            /* 3. Use McCamy's formula to determine the CCT    */
+            // 3. Use McCamy's formula to determine the CCT    
             n = (xc - 0.3320F) / (0.1858F - yc);
 
-            /* Calculate the final CCT */
+            // Calculate the final CCT 
             cct = (449.0F * Math.Pow(n, 3)) + (3525.0F * Math.Pow(n, 2)) + (6823.3F * n) + 5520.33F;
 
-            /* Return the results in degrees Kelvin */
+            // Return the results in degrees Kelvin 
             return cct;
         }
 
-        /**************************************************************************/
-        /*! 
-            @brief  Converts the raw R/G/B values to lux 
-        */
-        /**************************************************************************/
+        /// <summary>
+        /// Converts the raw R/G/B values to lux 
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="g"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public double CalculateLux(short r, short g, short b)
         {
             float illuminance;
 
-            /* This only uses RGB ... how can we integrate clear or calculate lux */
-            /* based exclusively on clear since this might be more reliable?      */
+            // This only uses RGB ... how can we integrate clear or calculate lux 
+            // based exclusively on clear since this might be more reliable?      
             illuminance = (-0.32466f * r) + (1.57837f * g) + (-0.73191f * b);
 
             return illuminance;
