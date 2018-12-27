@@ -36,7 +36,7 @@ namespace Iot.Device.Samples
                 await Task.Delay(1000);
 
                 tcs34725.SetGain(Gain.X16);
-                tcs34725.SetIntegrationTime(IntegrationTime.T101MS);
+                tcs34725.SetIntegrationTime(IntegrationTime.Ms101);
                 color = await tcs34725.GetRawDataOneShot();
                 temperature = tcs34725.CalculateColorTemperature(color.Red, color.Green, color.Blue);
                 lux = tcs34725.CalculateLux(color.Red, color.Green, color.Blue);

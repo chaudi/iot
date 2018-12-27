@@ -8,16 +8,19 @@ namespace Iot.Device.Tcs34725
     {
         /// <summary>
         /// RGBC interrupt enable. When asserted, permits RGBC interrupts to be generated.
+        /// AIEN
         /// </summary>
-        AIEN = 0b0001_0000,
+        Interrupt = 0b0001_0000,
         /// <summary>
-        /// Wait enable. This bit activates the wait feature. Writing a 1 activates the wait timer. Writing a 0 disables the wait timer
+        /// Wait enable. This bit activates the wait feature. Writing a 1 activates the wait timer. Writing a 0 disables the wait timer.
+        /// WEN
         /// </summary>
-        WEN = 0b0000_1000,
+        Wait = 0b0000_1000,
         /// <summary>
-        /// RGBC enable. This bit actives the two-channel ADC. Writing a 1 activates the RGBC. Writing a 0 disables the RGBC
+        /// RGBC enable. This bit actives the two-channel ADC. Writing a 1 activates the RGBC. Writing a 0 disables the RGBC.
+        /// AEN
         /// </summary>
-        AEN = 0b0000_0010,
+        Enable = 0b0000_0010,
         /// <summary>
         /// Power ON. This bit activates the internal oscillator to permit the timers and ADC channels to operate.
         /// Writing a 1  activates the oscillator. Writing a 0 disables the oscillator.
