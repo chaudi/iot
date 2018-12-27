@@ -10,6 +10,9 @@
 *.sln.docstates
 .vscode/
 
+*bmp280.sln
+*tcs34725.sln
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

@@ -38,7 +38,7 @@ namespace Iot.Device.Bmp280
             _communicationProtocol = CommunicationProtocol.I2c;
         }
 
-        private void Begin()
+        private void Initialize()
         {
             _i2cDevice.WriteByte((byte)Register.CHIPID);
             byte readSignature = _i2cDevice.ReadByte();
@@ -156,7 +156,7 @@ namespace Iot.Device.Bmp280
             //Make sure the I2C device is initialized
             if (!_initialized)
             {
-                Begin();
+                Initialize();
             }
 
             if (ReadPowerMode() == PowerMode.Forced)
@@ -223,7 +223,7 @@ namespace Iot.Device.Bmp280
             //Make sure the I2C device is initialized
             if (!_initialized)
             {
-                Begin();
+                Initialize();
             }
 
             if (ReadPowerMode() == PowerMode.Forced)
@@ -266,7 +266,7 @@ namespace Iot.Device.Bmp280
             //Make sure the I2C device is initialized
             if (!_initialized)
             {
-                Begin();
+                Initialize();
             }
 
             //Read the pressure first

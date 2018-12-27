@@ -8,7 +8,6 @@
 using System;
 using System.Buffers.Binary;
 using System.Device.I2c;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Iot.Device.Tcs34725
@@ -22,7 +21,7 @@ namespace Iot.Device.Tcs34725
         private I2cDevice _i2cDevice;
         private readonly CommunicationProtocol _communicationProtocol;
         private bool _initialized = false;
-        private readonly byte CommandBit = 0x80;
+        private readonly byte _commandBit = 0x80;
         private Gain _gain;
         private IntegrationTime _integrationTime;
 
@@ -33,54 +32,18 @@ namespace Iot.Device.Tcs34725
 
         public Tcs34725(I2cDevice i2cDevice)
         {
+            _communicationProtocol = CommunicationProtocol.I2c;
             _i2cDevice = i2cDevice ?? throw new ArgumentNullException(nameof(i2cDevice));
-        }
-
-        public Tcs34725(IntegrationTime time = IntegrationTime.T2_4MS, Gain gain = Gain.GAIN_1X, byte address = 0x29, byte commandbit = 0x80)
-        {
-            _integrationTime = time;
-            _gain = gain;
-            CommandBit = commandbit;
-        }
-
-        public async Task Initialize()
-        {
-            //Debug.WriteLine("Tcs34725 initialized");
-            //try
-            //{
-            //    I2cConnectionSettings settings = new I2cConnectionSettings(Address);
-
-            //    settings.BusSpeed = I2cBusSpeed.FastMode;
-
-            //    String aqs = I2cDevice.GetDeviceSelector(I2CControllerName);
-
-            //    DeviceInformationCollection dic = await DeviceInformation.FindAllAsync(aqs);
-
-            //    I2CDevice = await I2cDevice.FromIdAsync(dic[0].Id34725, settings);
-
-            //    if (I2CDevice == null)
-            //    {
-            //        Debug.WriteLine("Device not found");
-            //    }
-            //    initialised = true;
-            //}
-            //catch (Exception e)
-            //{
-            //    Debug.WriteLine("Exception: " + e.Message + "\n" + e.StackTrace);
-            //    throw;
-            //}
         }
 
         /// <summary>
         ///  Initializes I2C and configures the sensor (call this function before doing anything else) 
         /// </summary>
-        public void Begin()
+        public void Initialize()
         {
-            Debug.WriteLine("Tcs34725 BEGIN");
-
             // Make sure we're actually connected 
-            byte x = Read8BitsFromRegister((byte)Register.ID);
-            if ((x != 0x44) && (x != 0x10))
+            byte x = Read8BitsFromRegister((byte)Register.Id);
+            if ((x != Id34725) && (x != 0x10))
             {
                 return;
             }
@@ -90,24 +53,48 @@ namespace Iot.Device.Tcs34725
             Enable();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="waitTime"></param>
+        public void SetWait(WaitTime waitTime)
+        {
+            Write((byte)Register.WaitTime, (byte)waitTime);
+        }
+
+        /// <summary>
+        /// Wait long. If set the wait cycles are increased by a factor of 12.
+        /// </summary>
+        /// <param name="value"></param>
+        public void SetWaitLong(bool value)
+        {
+            if (true)
+            {
+                Write((byte)Register.Configuration, 0b0010);
+            }
+            Write((byte)Register.Configuration, 0b0000);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="gain"></param>
         public void SetGain(Gain gain)
         {
-            if (!_initialized) Begin();
-            Write((byte)Register.CONTROL_ANALOG_GAIN, (byte)gain);
+            if (!_initialized) Initialize();
+            Write((byte)Register.ControlAnalogGain, (byte)gain);
             _gain = gain;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="integrationTime"></param>
         public void SetIntegrationTime(IntegrationTime integrationTime)
         {
-            if (!_initialized) Begin();
-            Write((byte)Register.ATIME, (byte)integrationTime);
+            if (!_initialized) Initialize();
+            Write((byte)Register.RgbcTiming, (byte)integrationTime);
             _integrationTime = integrationTime;
-        }
-
-        public void Write(byte register, byte data)
-        {
-            byte[] writeBuffer = new byte[] { register, data };
-            _i2cDevice.Write(writeBuffer);
         }
 
         /// <summary>
@@ -116,12 +103,12 @@ namespace Iot.Device.Tcs34725
         /// <returns></returns>
         private async Task<Tcs34725Color> GetRawData()
         {
-            if (!_initialized) Begin();
+            if (!_initialized) Initialize();
 
-            ushort clear = Read16BitsFromRegister((byte)Register.CDATAL);
-            ushort red = Read16BitsFromRegister((byte)Register.RDATAL);
-            ushort green = Read16BitsFromRegister((byte)Register.GDATAL);
-            ushort blue = Read16BitsFromRegister((byte)Register.BDATAL);
+            ushort clear = Read16BitsFromRegister((byte)Register.ClearDataLow);
+            ushort red = Read16BitsFromRegister((byte)Register.RedDataLow);
+            ushort green = Read16BitsFromRegister((byte)Register.GreenDataLow);
+            ushort blue = Read16BitsFromRegister((byte)Register.BlueDataLow);
 
             // Set a delay for the integration time 
             switch (_integrationTime)
@@ -148,9 +135,13 @@ namespace Iot.Device.Tcs34725
             return new Tcs34725Color(red, green, blue, clear);
         }
 
-        async Task<Tcs34725Color> GetRawDataOneShot()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Tcs34725Color> GetRawDataOneShot()
         {
-            if (!_initialized) Begin();
+            if (!_initialized) Initialize();
 
             Enable();
             var result = await GetRawData();
@@ -163,9 +154,9 @@ namespace Iot.Device.Tcs34725
         /// </summary>
         private async void Enable()
         {
-            Write((byte)Register.ENABLE, (byte)Register.ENABLE_POWER_ON);
+            Write((byte)Register.Enable, (byte)EnableRegisterBit.PowerOn);
             await Task.Delay(3);
-            Write((byte)Register.ENABLE, (byte)Register.ENABLE_POWER_ON | (byte)Register.ENABLE_AEN);
+            Write((byte)Register.Enable, (byte)EnableRegisterBit.PowerOn | (byte)EnableRegisterBit.AEN);
         }
 
         /// <summary>
@@ -174,10 +165,10 @@ namespace Iot.Device.Tcs34725
         private void Disable()
         {
             // Turn the i2cDevice off to save power 
-            byte reg = 0;
-            reg = Read8BitsFromRegister((byte)Register.ENABLE);
-            int value = ~(((byte)Register.ENABLE_POWER_ON | (byte)Register.ENABLE_AEN));
-            Write((byte)Register.ENABLE, (byte)(reg & value));
+            byte currentRegisterValue;
+            currentRegisterValue = Read8BitsFromRegister((byte)Register.Enable);
+            int value = ~((byte)EnableRegisterBit.PowerOn | (byte)EnableRegisterBit.AEN);
+            Write((byte)Register.Enable, (byte)(currentRegisterValue & value));
         }
 
         /// <summary>
@@ -219,137 +210,139 @@ namespace Iot.Device.Tcs34725
             return (ushort)cct;
         }
 
-        /**************************************************************************/
-        /*!
-            @brief  Converts the raw R/G/B values to color temperature in degrees
-                    Kelvin using the algorithm described in DN40 from Taos (now AMS).
-        */
-        /**************************************************************************/
-        ushort CalculateColorTemperature_dn40(ushort r, ushort g, ushort b, ushort c)
+        /// <summary>
+        /// Converts the raw R/G/B values to color temperature in degrees
+        /// Kelvin using the algorithm described in DN40 from Taos(now AMS).
+        /// </summary>
+        /// <param name="red"></param>
+        /// <param name="green"></param>
+        /// <param name="blue"></param>
+        /// <param name="clear"></param>
+        /// <returns></returns>
+        public ushort CalculateColorTemperature_dn40(ushort red, ushort green, ushort blue, ushort clear)
         {
-            int rc;                     /* Error return code */
-            ushort r2, g2, b2;        /* RGB values minus IR component */
-            int gl;                     /* Results of the initial lux conversion */
-            ushort gain_int;           /* Gain multiplier as a normal integer */
-            ushort sat;               /* Digital saturation level */
-            ushort ir;                /* Inferred IR content */
+            //RGB values minus IR component
+            ushort red2, green2, blue2;
+            //Results of the initial lux conversion
+            int gl;
+            //Gain multiplier as a normal integer
+            ushort gain;
+            //Digital saturation level
+            ushort saturation;
+            //Inferred IR content
+            ushort ir;
 
-            /* Analog/Digital saturation:
-             *
-             * (a) As light becomes brighter, the clear channel will tend to
-             *     saturate first since R+G+B is approximately equal to C.
-             * (blue) The TCS34725 accumulates 1024 counts per 2.4ms of integration
-             *     time, up to a maximum values of 65535. This means analog
-             *     saturation can occur up to an integration time of 153.6ms
-             *     (64*2.4ms=153.6ms).
-             * (c) If the integration time is > 153.6ms, digital saturation will
-             *     occur before analog saturation. Digital saturation occurs when
-             *     the count reaches 65535.
-             */
+            //Analog/Digital saturation:
+            //(a) As light becomes brighter, the clear channel will tend to
+            //    saturate first since R+G+B is approximately equal to C.
+            //(blue) The TCS34725 accumulates 1024 counts per 2.4ms of integration
+            //    time, up to a maximum values of 65535. This means analog
+            //    saturation can occur up to an integration time of 153.6ms
+            //   (64*2.4ms=153.6ms).
+            //(clear) If the integration time is > 153.6ms, digital saturation will
+            //    occur before analog saturation. Digital saturation occurs when
+            //    the count reaches 65535.
+
             if ((256 - (byte)_integrationTime) > 63)
             {
-                /* Track digital saturation */
-                sat = 65535;
+                // Track digital saturation
+                saturation = 65535;
             }
             else
             {
-                /* Track analog saturation */
-                sat = (ushort)(1024 * (256 - (byte)_integrationTime));
+                // Track analog saturation
+                saturation = (ushort)(1024 * (256 - (byte)_integrationTime));
             }
 
-            /* Ripple rejection:
-             *
-             * (a) An integration time of 50ms or multiples of 50ms are required to
-             *     reject both 50Hz and 60Hz ripple.
-             * (blue) If an integration time faster than 50ms is required, you may need
-             *     to average a number of samples over a 50ms period to reject ripple
-             *     from fluorescent and incandescent light sources.
-             *
-             * Ripple saturation notes:
-             *
-             * (a) If there is ripple in the received signal, the value read from C
-             *     will be less than the max, but still have some effects of being
-             *     saturated. This means that you can be below the 'sat' value, but
-             *     still be saturating. At integration times >150ms this can be
-             *     ignored, but <= 150ms you should calculate the 75% saturation
-             *     level to avoid this problem.
-             */
+            //Ripple rejection:
+            // (a) An integration time of 50ms or multiples of 50ms are required to
+            //     reject both 50Hz and 60Hz ripple.
+            // (blue) If an integration time faster than 50ms is required, you may need
+            //     to average a number of samples over a 50ms period to reject ripple
+            //     from fluorescent and incandescent light sources.
+
+            // Ripple saturation notes:
+            // (a) If there is ripple in the received signal, the value read from C
+            //     will be less than the max, but still have some effects of being
+            //     saturated. This means that you can be below the 'sat' value, but
+            //     still be saturating. At integration times >150ms this can be
+            //     ignored, but <= 150ms you should calculate the 75% saturation
+            //     level to avoid this problem.
+
             if ((256 - (byte)_integrationTime) <= 63)
             {
-                /* Adjust sat to 75% to avoid analog saturation if atime < 153.6ms */
-                sat -= (ushort)(sat / 4);
+                // Adjust sat to 75% to avoid analog saturation if atime < 153.6ms 
+                saturation -= (ushort)(saturation / 4);
             }
 
-            /* Check for saturation and mark the sample as invalid if true */
-            if (c >= sat)
+            // Check for saturation and mark the sample as invalid if true 
+            if (clear >= saturation)
             {
                 return 0;
             }
 
-            /* AMS RGB sensors have no IR channel, so the IR content must be */
-            /* calculated indirectly. */
-            ir = (r + g + b > c) ? (ushort)((r + g + b - c) / 2) : (ushort)0;
+            // AMS RGB sensors have no IR channel, so the IR content must be
+            // calculated indirectly. 
+            ir = (red + green + blue > clear) ? (ushort)((red + green + blue - clear) / 2) : (ushort)0;
 
-            /* Remove the IR component from the raw RGB values */
-            r2 = (ushort)(r - ir);
-            g2 = (ushort)(g - ir);
-            b2 = (ushort)(b - ir);
+            // Remove the IR component from the raw RGB values 
+            red2 = (ushort)(red - ir);
+            green2 = (ushort)(green - ir);
+            blue2 = (ushort)(blue - ir);
 
-            /* Convert gain to a usable integer value */
+            // Convert gain to a usable integer value
             switch (_gain)
             {
-                case Gain.GAIN_4X: /* GAIN 4X */
-                    gain_int = 4;
+                case Gain.X4:
+                    gain = 4;
                     break;
-                case Gain.GAIN_16X: /* GAIN 16X */
-                    gain_int = 16;
+                case Gain.X16:
+                    gain = 16;
                     break;
-                case Gain.GAIN_60X: /* GAIN 60X */
-                    gain_int = 60;
+                case Gain.X60:
+                    gain = 60;
                     break;
-                case Gain.GAIN_1X: /* GAIN 1X */
+                case Gain.X1:
                 default:
-                    gain_int = 1;
+                    gain = 1;
                     break;
             }
 
-            /* Calculate the counts per lux (CPL), taking into account the optional
-             * arguments for Glass Attenuation (GA) and Device Factor (DF).
-             *
-             * GA = 1/T where T is glass transmissivity, meaning if glass is 50%
-             * transmissive, the GA is 2 (1/0.5=2), and if the glass attenuates light
-             * 95% the GA is 20 (1/0.05). A GA of 1.0 assumes perfect transmission.
-             *
-             * NOTE: It is recommended to have a CPL > 5 to have a lux accuracy
-             *       < +/- 0.5 lux, where the digitization error can be calculated via:
-             *       'DER = (+/-2) / CPL'.
-             */
-            float cpl = (((256 - (byte)_integrationTime) * 2.4f) * gain_int) / (1.0f * 310.0f);
+            //Calculate the counts per lux (CPL), taking into account the optional
+            // arguments for Glass Attenuation (GA) and Device Factor (DF).
 
-            /* Determine lux accuracy (+/- lux) */
+            // GA = 1/T where T is glass transmissivity, meaning if glass is 50%
+            // transmissive, the GA is 2 (1/0.5=2), and if the glass attenuates light
+            // 95% the GA is 20 (1/0.05). A GA of 1.0 assumes perfect transmission.
+
+            // NOTE: It is recommended to have a CPL > 5 to have a lux accuracy
+            //       < +/- 0.5 lux, where the digitization error can be calculated via:
+            //       'DER = (+/-2) / CPL'.
+            float cpl = (((256 - (byte)_integrationTime) * 2.4f) * gain) / (1.0f * 310.0f);
+
+            // Determine lux accuracy (+/- lux)
             float der = 2.0f / cpl;
 
-            /* Determine the maximum lux value */
+            // Determine the maximum lux value 
             double max_lux = 65535.0 / (cpl * 3);
 
-            /* Lux is a function of the IR-compensated RGB channels and the associated
-             * color coefficients, with G having a particularly heavy influence to
-             * match the nature of the human eye.
-             *
-             * NOTE: The green value should be > 10 to ensure the accuracy of the lux
-             *       conversions. If it is below 10, the gain should be increased, but
-             *       the clear<100 check earlier should cover this edge case.
-             */
-            gl = (int)(0.136f * r2 +                   /** Red coefficient. */
-                  1.000f * g2 +                   /** Green coefficient. */
-                 -0.444f * b2);                    /** Blue coefficient. */
+            //Lux is a function of the IR-compensated RGB channels and the associated
+            // color coefficients, with G having a particularly heavy influence to
+            // match the nature of the human eye.
+
+            // NOTE: The green value should be > 10 to ensure the accuracy of the lux
+            //       conversions. If it is below 10, the gain should be increased, but
+            //       the clear<100 check earlier should cover this edge case.
+            gl = (int)(0.136f * red2 +                   /** Red coefficient. */
+                  1.000f * green2 +                   /** Green coefficient. */
+                 -0.444f * blue2);                    /** Blue coefficient. */
 
             float lux = gl / cpl;
 
-            /* A simple method of measuring color temp is to use the ratio of blue */
-            /* to red light, taking IR cancellation into account. */
-            ushort cct = (ushort)((3810 * (uint)b2) /      /** Color temp coefficient. */
-                           (uint)r2 + 1391);         /** Color temp offset. */
+            // A simple method of measuring color temp is to use the ratio of blue 
+            // to red light, taking IR cancellation into account. 
+            ushort cct = (ushort)((3810 * (uint)blue2) /      /** Color temp coefficient. */
+                           (uint)red2 + 1391);         /** Color temp offset. */
 
             return cct;
         }
@@ -357,36 +350,40 @@ namespace Iot.Device.Tcs34725
         /// <summary>
         /// Converts the raw R/G/B values to lux 
         /// </summary>
-        /// <param name="r"></param>
-        /// <param name="g"></param>
-        /// <param name="b"></param>
+        /// <param name="red"></param>
+        /// <param name="green"></param>
+        /// <param name="blue"></param>
         /// <returns></returns>
-        public ushort CalculateLux(ushort r, ushort g, ushort b)
+        public ushort CalculateLux(ushort red, ushort green, ushort blue)
         {
-            float illuminance;
-
             // This only uses RGB ... how can we integrate clear or calculate lux 
             // based exclusively on clear since this might be more reliable?      
-            illuminance = (-0.32466f * r) + (1.57837f * g) + (-0.73191f * b);
+            var illuminance = (-0.32466f * red) + (1.57837f * green) + (-0.73191f * blue);
 
             return (ushort)illuminance;
         }
 
-        void SetInterrupt(bool i)
+        /// <summary>
+        /// RGBC interrupt enable. When asserted, permits RGBC interrupts to be generated
+        /// </summary>
+        /// <param name="i"></param>
+        public void SetInterrupt(bool i)
         {
-            byte r = Read8BitsFromRegister((byte)Register.ENABLE);
+            byte r = Read8BitsFromRegister((byte)Register.Enable);
             if (i)
             {
-                r |= (byte)Register.ENABLE_AIEN;
+                //enable
+                r |= (byte)EnableRegisterBit.AIEN;
             }
             else
             {
-                r &= (byte)(~Register.ENABLE_AIEN);
+                //disable
+                r &= (byte)(~EnableRegisterBit.AIEN);
             }
-            Write((byte)Register.ENABLE, r);
+            Write((byte)Register.Enable, r);
         }
 
-        void ClearInterrupt()
+        public void ClearInterrupt()
         {
             throw new NotImplementedException();
 
@@ -399,6 +396,11 @@ namespace Iot.Device.Tcs34725
             //            Wire.endTransmission();
         }
 
+        private void Write(byte register, byte data)
+        {
+            byte[] writeBuffer = new byte[] { register, data };
+            _i2cDevice.Write(writeBuffer);
+        }
 
         /// <summary>
         ///  Reads an 8 bit value from a register
@@ -432,7 +434,7 @@ namespace Iot.Device.Tcs34725
         /// <returns>
         ///  Value from register
         /// </returns>
-        internal ushort Read16BitsFromRegister(byte register)
+        private ushort Read16BitsFromRegister(byte register)
         {
             if (_communicationProtocol == CommunicationProtocol.I2c)
             {
@@ -474,6 +476,7 @@ namespace Iot.Device.Tcs34725
                 throw new NotImplementedException();
             }
         }
+
         public void Dispose()
         {
             _i2cDevice = null;

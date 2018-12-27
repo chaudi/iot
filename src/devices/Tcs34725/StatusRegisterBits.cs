@@ -4,23 +4,17 @@
 
 namespace Iot.Device.Tcs34725
 {
-    public enum Gain : byte
+    public enum StatusRegisterBits : byte
     {
         /// <summary>
-        /// 1x gain
+        /// RGBC Clear channel interrupt
+        /// AINT
         /// </summary>
-        X1 = 0b0000,
+        Aint = 0x10,
         /// <summary>
-        /// 4x gain
+        /// Indicates that the RGBC channels have completed an integration cycle
+        /// AVAILID
         /// </summary>
-        X4 = 0b0001,
-        /// <summary>
-        /// 16x gain
-        /// </summary>
-        X16 = 0b0010,
-        /// <summary>
-        /// 60x gain
-        /// </summary>
-        X60 = 0b0011
+        AvailId = 0x01,
     }
 }

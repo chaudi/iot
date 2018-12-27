@@ -8,7 +8,7 @@ namespace Iot.Device.Tcs34725
     /// Wait time is set 2.4 ms increments unless the WLONG bit is 
     /// asserted, in which case the wait times are 12× longer.WTIME is 
     /// programmed as a 2’s complement number.
-    /// Used to set valid values in <see cref="Register.WAIT_TIME"/>
+    /// Used to set valid values in <see cref="Register.WaitTime"/>
     /// </summary>
     public enum WaitTime
     {
