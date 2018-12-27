@@ -59,10 +59,6 @@ namespace Iot.Device.Tcs34725
         /// Wait Long. When asserted, the wait cycles are increased by a factor 12x from that programmed in the WTIME register.
         /// </summary>
         Configuration = 0x0D,
-        // <summary>
-        //  Choose between short and long (12x) wait times via TCS34725_WTIME 
-        // </summary>
-        //CONFIG_WLONG = 0x02,
         /// <summary>
         /// Set the gain level for the sensor, <see cref="Gain"/> for valid values.
         /// </summary>

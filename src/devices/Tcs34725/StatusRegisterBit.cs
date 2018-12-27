@@ -4,7 +4,7 @@
 
 namespace Iot.Device.Tcs34725
 {
-    public enum StatusRegisterBits : byte
+    public enum StatusRegisterBit : byte
     {
         /// <summary>
         /// RGBC Clear channel interrupt

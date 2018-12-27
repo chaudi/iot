@@ -6,23 +6,29 @@ namespace Iot.Device.Tcs34725
 {
     /// <summary>
     /// Wait time is set 2.4 ms increments unless the WLONG bit is 
-    /// asserted, in which case the wait times are 12× longer.WTIME is 
+    /// asserted, in which case the wait times are 12× longer. WTIME is 
     /// programmed as a 2’s complement number.
     /// Used to set valid values in <see cref="Register.WaitTime"/>
     /// </summary>
     public enum WaitTime
     {
         /// <summary>
-        /// WLONG0 = 2.4ms   WLONG1 = 0.029s. 1
+        /// Wait time 1
+        /// 2.4 milliseconds
+        /// If <see cref="Tcs34725.SetWaitLong"/> is set then the wait time is 0.029 seconds
         /// </summary>
-        WTIME_2_4MS = 0xFF,
+        Ms24 = 0xFF,
         /// <summary>
-        ///  WLONG0 = 204ms   WLONG1 = 2.45s. 85
+        /// Wait time 85
+        /// 204 milliseconds
+        /// If <see cref="Tcs34725.SetWaitLong"/> is set then the wait time is 2.45 seconds
         /// </summary>
-        WTIME_204MS = 0xAB,
+        Ms204 = 0xAB,
         /// <summary>
-        /// WLONG0 = 614ms   WLONG1 = 7.4s. 256
+        /// Wait time 256
+        /// 614 milliseconds
+        /// If <see cref="Tcs34725.SetWaitLong"/> is set then the wait time is 7.4 seconds
         /// </summary>
-        WTIME_614MS = 0x00,
+        Ms614 = 0x00,
     }
 }

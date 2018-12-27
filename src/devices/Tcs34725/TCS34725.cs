@@ -32,8 +32,8 @@ namespace Iot.Device.Tcs34725
 
         public Tcs34725(I2cDevice i2cDevice)
         {
-            _communicationProtocol = CommunicationProtocol.I2c;
             _i2cDevice = i2cDevice ?? throw new ArgumentNullException(nameof(i2cDevice));
+            _communicationProtocol = CommunicationProtocol.I2c;
         }
 
         /// <summary>
@@ -181,27 +181,26 @@ namespace Iot.Device.Tcs34725
         public ushort CalculateColorTemperature(ushort red, ushort green, ushort blue)
         {
             //RGB to XYZ correlation
-            double X, Y, Z;
+            double x, y, z;
             //Chromaticity co-ordinates
-            double xc, yc;
+            double xChromatic, yChromatic;
             //McCamy's formula  
-            double n;
             double cct;
 
             // 1. Map RGB values to their XYZ counterparts.    
             // Based on 6500K fluorescent, 3000K fluorescent   
             // and 60W incandescent values for a wide range.  
             // Note: Y = Illuminance or lux                    
-            X = (-0.14282F * red) + (1.54924F * green) + (-0.95641F * blue);
-            Y = (-0.32466F * red) + (1.57837F * green) + (-0.73191F * blue);
-            Z = (-0.68202F * red) + (0.77073F * green) + (0.56332F * blue);
+            x = (-0.14282F * red) + (1.54924F * green) + (-0.95641F * blue);
+            y = (-0.32466F * red) + (1.57837F * green) + (-0.73191F * blue);
+            z = (-0.68202F * red) + (0.77073F * green) + (0.56332F * blue);
 
             // 2. Calculate the chromaticity co-ordinates      
-            xc = (X) / (X + Y + Z);
-            yc = (Y) / (X + Y + Z);
+            xChromatic = (x) / (x + y + z);
+            yChromatic = (y) / (x + y + z);
 
             // 3. Use McCamy's formula to determine the CCT    
-            n = (xc - 0.3320F) / (0.1858F - yc);
+            double n = (xChromatic - 0.3320F) / (0.1858F - yChromatic);
 
             // Calculate the final CCT 
             cct = (449.0F * Math.Pow(n, 3)) + (3525.0F * Math.Pow(n, 2)) + (6823.3F * n) + 5520.33F;
@@ -242,7 +241,6 @@ namespace Iot.Device.Tcs34725
             //(clear) If the integration time is > 153.6ms, digital saturation will
             //    occur before analog saturation. Digital saturation occurs when
             //    the count reaches 65535.
-
             if ((256 - (byte)_integrationTime) > 63)
             {
                 // Track digital saturation
@@ -366,21 +364,21 @@ namespace Iot.Device.Tcs34725
         /// <summary>
         /// RGBC interrupt enable. When asserted, permits RGBC interrupts to be generated
         /// </summary>
-        /// <param name="i"></param>
-        public void SetInterrupt(bool i)
+        /// <param name="interrupt"></param>
+        public void SetInterrupt(bool interrupt)
         {
-            byte r = Read8BitsFromRegister((byte)Register.Enable);
-            if (i)
+            byte data = Read8BitsFromRegister((byte)Register.Enable);
+            if (interrupt)
             {
                 //enable
-                r |= (byte)EnableRegisterBit.AIEN;
+                data |= (byte)EnableRegisterBit.AIEN;
             }
             else
             {
                 //disable
-                r &= (byte)(~EnableRegisterBit.AIEN);
+                data &= (byte)(~EnableRegisterBit.AIEN);
             }
-            Write((byte)Register.Enable, r);
+            Write((byte)Register.Enable, data);
         }
 
         public void ClearInterrupt()
@@ -396,9 +394,14 @@ namespace Iot.Device.Tcs34725
             //            Wire.endTransmission();
         }
 
+        /// <summary>
+        /// Writes the data to the given register
+        /// </summary>
+        /// <param name="register">Register to write to</param>
+        /// <param name="data">Data to write to the register</param>
         private void Write(byte register, byte data)
         {
-            byte[] writeBuffer = new byte[] { register, data };
+            Span<byte> writeBuffer = stackalloc byte[2] { register, data };
             _i2cDevice.Write(writeBuffer);
         }
 

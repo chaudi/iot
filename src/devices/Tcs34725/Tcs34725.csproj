@@ -7,12 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="EnableRegisterValue.cs" />
+    <Compile Include="EnableRegisterBit.cs" />
     <Compile Include="Interrupt.cs" />
     <Compile Include="Gain.cs" />
     <Compile Include="IntegrationTime.cs" />
     <Compile Include="Register.cs" />
-    <Compile Include="StatusRegisterBits.cs" />
+    <Compile Include="StatusRegisterBit.cs" />
     <Compile Include="Tcs34725.cs" />
     <Compile Include="Tcs34725Color.cs" />
     <Compile Include="WaitTime.cs" />
