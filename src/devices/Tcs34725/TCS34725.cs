@@ -113,22 +113,22 @@ namespace Iot.Device.Tcs34725
             // Set a delay for the integration time 
             switch (_integrationTime)
             {
-                case IntegrationTime.T2_4MS:
+                case IntegrationTime.Ms2Point4:
                     await Task.Delay(3);
                     break;
-                case IntegrationTime.T24MS:
+                case IntegrationTime.Ms24:
                     await Task.Delay(24);
                     break;
-                case IntegrationTime.T50MS:
+                case IntegrationTime.Ms50:
                     await Task.Delay(50);
                     break;
-                case IntegrationTime.T101MS:
+                case IntegrationTime.Ms101:
                     await Task.Delay(101);
                     break;
-                case IntegrationTime.T154MS:
+                case IntegrationTime.Ms154:
                     await Task.Delay(154);
                     break;
-                case IntegrationTime.T700MS:
+                case IntegrationTime.Ms700:
                     await Task.Delay(700);
                     break;
             }
@@ -156,7 +156,7 @@ namespace Iot.Device.Tcs34725
         {
             Write((byte)Register.Enable, (byte)EnableRegisterBit.PowerOn);
             await Task.Delay(3);
-            Write((byte)Register.Enable, (byte)EnableRegisterBit.PowerOn | (byte)EnableRegisterBit.AEN);
+            Write((byte)Register.Enable, (byte)EnableRegisterBit.PowerOn | (byte)EnableRegisterBit.Enable);
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace Iot.Device.Tcs34725
             // Turn the i2cDevice off to save power 
             byte currentRegisterValue;
             currentRegisterValue = Read8BitsFromRegister((byte)Register.Enable);
-            int value = ~((byte)EnableRegisterBit.PowerOn | (byte)EnableRegisterBit.AEN);
+            int value = ~((byte)EnableRegisterBit.PowerOn | (byte)EnableRegisterBit.Enable);
             Write((byte)Register.Enable, (byte)(currentRegisterValue & value));
         }
 
@@ -231,7 +231,7 @@ namespace Iot.Device.Tcs34725
             //Inferred IR content
             ushort ir;
 
-            //Analog/Digital saturation:
+            //Enable/Digital saturation:
             //(a) As light becomes brighter, the clear channel will tend to
             //    saturate first since R+G+B is approximately equal to C.
             //(blue) The TCS34725 accumulates 1024 counts per 2.4ms of integration
@@ -371,12 +371,12 @@ namespace Iot.Device.Tcs34725
             if (interrupt)
             {
                 //enable
-                data |= (byte)EnableRegisterBit.AIEN;
+                data |= (byte)EnableRegisterBit.Interrupt;
             }
             else
             {
                 //disable
-                data &= (byte)(~EnableRegisterBit.AIEN);
+                data &= (byte)(~EnableRegisterBit.Interrupt);
             }
             Write((byte)Register.Enable, data);
         }
