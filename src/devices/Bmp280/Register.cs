@@ -7,38 +7,38 @@ namespace Iot.Device.Bmp280
     /// <summary>
     ///  Register
     /// </summary>
-    public enum Register : byte
+    internal enum Register : byte
     {
-        DIG_T1 = 0x88,
-        DIG_T2 = 0x8A,
-        DIG_T3 = 0x8C,
+        DigT1 = 0x88,
+        DigT2 = 0x8A,
+        DigT3 = 0x8C,
 
-        DIG_P1 = 0x8E,
-        DIG_P2 = 0x90,
-        DIG_P3 = 0x92,
-        DIG_P4 = 0x94,
-        DIG_P5 = 0x96,
-        DIG_P6 = 0x98,
-        DIG_P7 = 0x9A,
-        DIG_P8 = 0x9C,
-        DIG_P9 = 0x9E,
+        DigP1 = 0x8E,
+        DigP2 = 0x90,
+        DigP3 = 0x92,
+        DigP4 = 0x94,
+        DigP5 = 0x96,
+        DigP6 = 0x98,
+        DigP7 = 0x9A,
+        DigP8 = 0x9C,
+        DigP9 = 0x9E,
 
-        CHIPID = 0xD0,
-        VERSION = 0xD1,
-        SOFTRESET = 0xE0,
+        ChipId = 0xD0,
+        Version = 0xD1,
+        SoftReset = 0xE0,
 
-        CAL26 = 0xE1,  // R calibration stored in 0xE1-0xF0
+        Cal26 = 0xE1,  // R calibration stored in 0xE1-0xF0
 
-        STATUS = 0xF3,
-        CONTROL = 0xF4,
-        CONFIG = 0xF5,
+        Status = 0xF3,
+        Control = 0xF4,
+        Config = 0xF5,
 
-        PRESSUREDATA_MSB = 0xF7,
-        PRESSUREDATA_LSB = 0xF8,
-        PRESSUREDATA_XLSB = 0xF9, // bits <7:4>
+        PressureDataMsb = 0xF7,
+        PressureDataLsb = 0xF8,
+        PressureDataXlsb = 0xF9, // bits <7:4>
 
-        TEMPDATA_MSB = 0xFA,
-        TEMPDATA_LSB = 0xFB,
-        TEMPDATA_XLSB = 0xFC, // bits <7:4>=
+        TemperatureDataMsb = 0xFA,
+        TemperatureDataLsb = 0xFB,
+        TemperatureDataXlsb = 0xFC, // bits <7:4>=
     }
 }

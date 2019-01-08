@@ -333,3 +333,4 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+/src/devices/Bmp280/Bmp280.sln

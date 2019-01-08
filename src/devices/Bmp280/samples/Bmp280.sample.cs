@@ -5,6 +5,8 @@
 using System;
 using System.Device.I2c;
 using System.Device.I2c.Drivers;
+using System.Device.Spi;
+using System.Device.Spi.Drivers;
 using System.Threading;
 using System.Threading.Tasks;
 using Iot.Device.Bmp280;
@@ -16,61 +18,85 @@ namespace Iot.Device.Samples
         static async Task Main(string[] args)
         {
             Console.WriteLine("Hello Bmp280!");
+            await SpiLoop();
+        }
 
+        static async Task SpiLoop()
+        {
+            var spiSettings = new SpiConnectionSettings(0, 1);
+            var spiDevice = new UnixSpiDevice(spiSettings);
+
+            var spiBmp280 = new Bmp280.Bmp280(spiDevice);
+
+            await Loop(spiBmp280);
+        }
+
+        static async Task I2cLoop()
+        {
             //0x77 is the address for BMP280
             const int bmp280Address = 0x77;
             //bus id on the raspberry pi 3
             const int busId = 1;
-            //set this to the current sea level pressure in the area for correct altitude readings
-            const double defaultSeaLevelPressure = 1033.00;
 
             var i2cSettings = new I2cConnectionSettings(busId, bmp280Address);
             var i2cDevice = new UnixI2cDevice(i2cSettings);
             var i2CBmp280 = new Bmp280.Bmp280(i2cDevice);
 
-            using (i2CBmp280)
+            await Loop(i2CBmp280);
+        }
+
+        static async Task Loop(Bmp280.Bmp280 bmp280Device)
+        {
+            //set this to the current sea level pressure in the area for correct altitude readings
+            const double defaultSeaLevelPressure = 1033.00;
+
+            using (bmp280Device)
             {
                 while (true)
                 {
                     ////set mode forced so device sleeps after read
-                    i2CBmp280.SetPowerMode(PowerMode.Forced);
+                    //bmp280Device.SetPowerMode(PowerMode.Forced);
 
-                    //set samplings
-                    i2CBmp280.SetTemperatureSampling(Sampling.UltraLowPower);
-                    i2CBmp280.SetPressureSampling(Sampling.UltraLowPower);
+                    ////set samplings
+                    //bmp280Device.SetTemperatureSampling(Sampling.UltraLowPower);
+                    //bmp280Device.SetPressureSampling(Sampling.UltraLowPower);
+
+                    var result = bmp280Device.ReadPowerMode();
+                    
+                    Console.WriteLine($"Powermode {Enum.GetName(typeof(PowerMode), result)}");
 
                     //read values
-                    double tempValue = await i2CBmp280.ReadTemperatureAsync();
+                    double tempValue = await bmp280Device.ReadTemperatureAsync();
                     Console.WriteLine($"Temperature {tempValue}");
-                    double preValue = await i2CBmp280.ReadPressureAsync();
+                    double preValue = await bmp280Device.ReadPressureAsync();
                     Console.WriteLine($"Pressure {preValue}");
-                    double altValue = await i2CBmp280.ReadAltitudeAsync(defaultSeaLevelPressure);
+                    double altValue = await bmp280Device.ReadAltitudeAsync(defaultSeaLevelPressure);
                     Console.WriteLine($"Altitude: {altValue}");
                     Thread.Sleep(1000);
 
-                    //set higher sampling
-                    i2CBmp280.SetTemperatureSampling(Sampling.LowPower);
-                    Console.WriteLine(i2CBmp280.ReadTemperatureSampling());
-                    i2CBmp280.SetPressureSampling(Sampling.UltraHighResolution);
-                    Console.WriteLine(i2CBmp280.ReadPressureSampling());
+                    ////set higher sampling
+                    //bmp280Device.SetTemperatureSampling(Sampling.LowPower);
+                    //Console.WriteLine(bmp280Device.ReadTemperatureSampling());
+                    //bmp280Device.SetPressureSampling(Sampling.UltraHighResolution);
+                    //Console.WriteLine(bmp280Device.ReadPressureSampling());
 
-                    //set mode forced and read again
-                    i2CBmp280.SetPowerMode(PowerMode.Forced);
+                    ////set mode forced and read again
+                    //bmp280Device.SetPowerMode(PowerMode.Forced);
 
                     //read values
-                    tempValue = await i2CBmp280.ReadTemperatureAsync();
+                    tempValue = await bmp280Device.ReadTemperatureAsync();
                     Console.WriteLine($"Temperature {tempValue}");
-                    preValue = await i2CBmp280.ReadPressureAsync();
+                    preValue = await bmp280Device.ReadPressureAsync();
                     Console.WriteLine($"Pressure {preValue}");
-                    altValue = await i2CBmp280.ReadAltitudeAsync(defaultSeaLevelPressure);
+                    altValue = await bmp280Device.ReadAltitudeAsync(defaultSeaLevelPressure);
                     Console.WriteLine($"Altitude: {altValue}");
-                    Thread.Sleep(5000);
+                    //Thread.Sleep(5000);
 
-                    //set sampling to higher
-                    i2CBmp280.SetTemperatureSampling(Sampling.UltraHighResolution);
-                    Console.WriteLine(i2CBmp280.ReadTemperatureSampling());
-                    i2CBmp280.SetPressureSampling(Sampling.UltraLowPower);
-                    Console.WriteLine(i2CBmp280.ReadPressureSampling());
+                    ////set sampling to higher
+                    //bmp280Device.SetTemperatureSampling(Sampling.UltraHighResolution);
+                    //Console.WriteLine(bmp280Device.ReadTemperatureSampling());
+                    //bmp280Device.SetPressureSampling(Sampling.UltraLowPower);
+                    //Console.WriteLine(bmp280Device.ReadPressureSampling());
                 }
             }
         }

@@ -9,6 +9,7 @@
   <ItemGroup>
     <None Remove="rpi-bmp280_i2c.fzz" />
     <None Remove="rpi-bmp280_i2c.png" />
+    <None Remove="rpi-bmp280_spi.fzz" />
   </ItemGroup>
 
   <ItemGroup>
