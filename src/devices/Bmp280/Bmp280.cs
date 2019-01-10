@@ -52,12 +52,14 @@ namespace Iot.Device.Bmp280
         {
             if (_communicationProtocol == CommunicationProtocol.I2c)
             {
-                Span<byte> writeData = stackalloc byte[1] { 0};
+                Span<byte> writeData = stackalloc byte[2] { register, data };
                 _i2cDevice.Write(writeData);
             }
             else if (_communicationProtocol == CommunicationProtocol.Spi)
             {
-
+                byte transformedRegister = (byte)(register & 0b0111_1111);
+                Span<byte> writeData = stackalloc byte[2] { transformedRegister, data };
+                _spiDevice.Write(writeData);
             }
         }
 
@@ -90,7 +92,7 @@ namespace Iot.Device.Bmp280
             //clear last two bits
             status = (byte)(status & 0b1111_1100);
             status = (byte)(status | (byte)powerMode);
-            _i2cDevice.Write(new[] { (byte)Register.Control, status });
+            WriteByte((byte)Register.Control, status);
         }
 
         /// <summary>
@@ -124,7 +126,7 @@ namespace Iot.Device.Bmp280
             byte status = Read8BitsFromRegister((byte)Register.Control);
             status = (byte)(status & 0b0001_1111);
             status = (byte)(status | (byte)sampling << 5);
-            _i2cDevice.Write(new[] { (byte)Register.Control, status });
+            WriteByte((byte)Register.Control, status);
         }
 
         /// <summary>
@@ -168,8 +170,7 @@ namespace Iot.Device.Bmp280
             byte status = Read8BitsFromRegister((byte)Register.Control);
             status = (byte)(status & 0b1110_0011);
             status = (byte)(status | (byte)sampling << 2);
-            Span<byte> writeData = stackalloc byte[2] { (byte)Register.Control, status };
-            _i2cDevice.Write(writeData);
+            WriteByte((byte)Register.Control, status);
         }
 
         /// <summary>
@@ -387,6 +388,11 @@ namespace Iot.Device.Bmp280
                 Span<byte> writeBuffer = stackalloc byte[1] { transformedRegister };
                 Span<byte> readBuffer = stackalloc byte[1];
                 _spiDevice.TransferFullDuplex(writeBuffer, readBuffer);
+                Console.WriteLine(readBuffer.ToString());
+                Span<byte> writeBuffer1 = stackalloc byte[3] { transformedRegister,0,0 };
+                Span<byte> readBuffer1 = stackalloc byte[3];
+                _spiDevice.TransferFullDuplex(writeBuffer1, readBuffer1);
+                Console.WriteLine(readBuffer1.ToString());
 
                 return readBuffer[0];
             }
@@ -438,7 +444,7 @@ namespace Iot.Device.Bmp280
                 Span<byte> readBuffer = stackalloc byte[2];
                 _spiDevice.TransferFullDuplex(writeBuffer, readBuffer);
 
-                return readBuffer[0];
+                return BinaryPrimitives.ReadUInt16LittleEndian(readBuffer);
             }
         }
 

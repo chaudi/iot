@@ -23,7 +23,11 @@ namespace Iot.Device.Samples
 
         static async Task SpiLoop()
         {
-            var spiSettings = new SpiConnectionSettings(0, 1);
+            var spiSettings = new SpiConnectionSettings(0, 0)
+            {
+                ClockFrequency = 500000,
+                Mode = SpiMode.Mode0
+            };
             var spiDevice = new UnixSpiDevice(spiSettings);
 
             var spiBmp280 = new Bmp280.Bmp280(spiDevice);
@@ -62,7 +66,7 @@ namespace Iot.Device.Samples
                     //bmp280Device.SetPressureSampling(Sampling.UltraLowPower);
 
                     var result = bmp280Device.ReadPowerMode();
-                    
+
                     Console.WriteLine($"Powermode {Enum.GetName(typeof(PowerMode), result)}");
 
                     //read values
